@@ -172,7 +172,10 @@ async function renderTodayTab(container) {
           ${todayLog.exercises.map(e => e.name).join(', ')}
         </div>
       </div>
-      <button class="btn btn-secondary" onclick="editTodayLog(${todayLog.id})">Edit Log</button>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="editTodayLog(${todayLog.id})">Edit Log</button>
+        <button class="btn btn-primary" onclick="addMoreToLog(${todayLog.id}, ${current.weekNumber}, ${current.dayNumber})">Add More</button>
+      </div>
     `;
   }
 
@@ -657,6 +660,21 @@ async function openLogModal(weekNumber, dayNumber) {
 
 async function editTodayLog(logId) {
   await editLog(logId);
+}
+
+async function addMoreToLog(logId, weekNumber, dayNumber) {
+  const log = await getWorkoutLog(logId);
+  if (!log) return;
+
+  currentLogExercises = [...log.exercises];
+  currentLogNotes = log.notes || '';
+  editingLogId = logId;
+
+  const modal = document.getElementById('log-modal');
+  document.querySelector('.modal-header h2').textContent = 'Add to Workout';
+
+  renderLogModal(weekNumber, dayNumber, log.date);
+  modal.classList.remove('hidden');
 }
 
 async function editLog(logId) {
