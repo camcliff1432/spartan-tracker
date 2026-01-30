@@ -475,6 +475,7 @@ function selectCalendarDate(dateStr) {
 // SETTINGS TAB
 async function renderSettingsTab(container) {
   const startDate = await getSetting('programStartDate');
+  const debugDate = localStorage.getItem('debugDate');
 
   let html = `
     <div class="settings-item">
@@ -510,6 +511,20 @@ async function renderSettingsTab(container) {
     </div>
 
     <input type="file" id="import-file" accept=".json" style="display: none" onchange="handleImport(event)">
+
+    <div class="card mt-16">
+      <div class="card-title" style="margin-bottom: 12px;">Testing Mode</div>
+      <div class="settings-item" style="margin-bottom: 0;">
+        <div>
+          <div class="settings-label">Simulate Date</div>
+          <div class="settings-value">${debugDate ? formatDate(debugDate) + ' (active)' : 'Using real date'}</div>
+        </div>
+        <button class="settings-btn" onclick="editDebugDate()">${debugDate ? 'Change' : 'Set'}</button>
+      </div>
+      ${debugDate ? `
+      <button class="btn btn-secondary btn-small mt-16" onclick="clearDebugDate()">Reset to Real Date</button>
+      ` : ''}
+    </div>
   `;
 
   html += `
@@ -591,6 +606,40 @@ function confirmClearData() {
       switchTab('settings');
     });
   }
+}
+
+// Debug date functions for testing
+function editDebugDate() {
+  const currentDebug = localStorage.getItem('debugDate') || getTodayString();
+
+  const modal = document.getElementById('log-modal');
+  const modalBody = document.getElementById('modal-body');
+  document.querySelector('.modal-header h2').textContent = 'Simulate Date';
+
+  modalBody.innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Pretend today is:</label>
+      <input type="date" class="form-input" id="debug-date-input" value="${currentDebug}">
+    </div>
+    <p class="text-muted text-small mb-16">
+      This lets you test different weeks/days without waiting. The app will behave as if it's this date.
+    </p>
+    <button class="btn btn-primary" onclick="saveDebugDate()">Set Date</button>
+  `;
+
+  modal.classList.remove('hidden');
+}
+
+function saveDebugDate() {
+  const input = document.getElementById('debug-date-input');
+  localStorage.setItem('debugDate', input.value);
+  closeModal();
+  switchTab('today');
+}
+
+function clearDebugDate() {
+  localStorage.removeItem('debugDate');
+  switchTab('settings');
 }
 
 // LOG WORKOUT MODAL

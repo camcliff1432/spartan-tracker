@@ -232,7 +232,10 @@ function getCurrentWeekDay(startDateStr) {
   if (!startDateStr) return null;
 
   const startDate = new Date(startDateStr);
-  const today = new Date();
+
+  // Check for debug date override
+  const debugDate = localStorage.getItem('debugDate');
+  const today = debugDate ? new Date(debugDate) : new Date();
 
   // Reset time to midnight for accurate day calculation
   startDate.setHours(0, 0, 0, 0);
@@ -259,6 +262,11 @@ function getCurrentWeekDay(startDateStr) {
 
 // Get today's date in YYYY-MM-DD format
 function getTodayString() {
+  // Check for debug date override
+  const debugDate = localStorage.getItem('debugDate');
+  if (debugDate) {
+    return debugDate;
+  }
   const today = new Date();
   return today.toISOString().split('T')[0];
 }
