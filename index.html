@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>ThreesDrop</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Password Lock Screen -->
+  <div id="lock-screen">
+    <div class="lock-content">
+      <h1 class="lock-title">Sorry, no ThreesDrop right now!</h1>
+      <p class="lock-subtitle">Check back later.</p>
+      <input type="password" id="password-input" class="password-input" placeholder="..." autocomplete="off">
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <header id="header">
+      <h1>Spartan Tracker</h1>
+    </header>
+
+    <!-- Main content area - tabs render here -->
+    <main id="content">
+      <!-- Dynamic content loaded by JS -->
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav id="nav">
+      <button class="nav-btn active" data-tab="today">
+        <span class="nav-icon">&#9673;</span>
+        <span class="nav-label">Today</span>
+      </button>
+      <button class="nav-btn" data-tab="plan">
+        <span class="nav-icon">&#9776;</span>
+        <span class="nav-label">Plan</span>
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <span class="nav-icon">&#9716;</span>
+        <span class="nav-label">History</span>
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <span class="nav-icon">&#9881;</span>
+        <span class="nav-label">Settings</span>
+      </button>
+    </nav>
+
+    <!-- Log Workout Modal -->
+    <div id="log-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Log Workout</h2>
+          <button id="close-modal" class="close-btn">&times;</button>
+        </div>
+        <div id="modal-body">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="training-plan.js"></script>
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    }
+  </script>
+</body>
+</html>
