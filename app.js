@@ -205,7 +205,7 @@ async function renderTodayTab(container) {
   html += `</div>`;
 
   // Weekly stats
-  const weekStart = new Date(startDate);
+  const weekStart = parseLocalDate(startDate);
   weekStart.setDate(weekStart.getDate() + (current.weekNumber - 1) * 7);
   const stats = await getWeeklyStats(weekStart.toISOString().split('T')[0]);
 
@@ -254,7 +254,7 @@ async function renderPlanTab(container) {
     let isLogged = false;
     let actualDayName = day.day.substring(0, 3); // fallback to plan day name
     if (startDate) {
-      const date = new Date(startDate);
+      const date = parseLocalDate(startDate);
       date.setDate(date.getDate() + (selectedWeek - 1) * 7 + (day.dayNumber - 1));
       dayDate = date.toISOString().split('T')[0];
       isLogged = loggedDates.has(dayDate);
@@ -294,7 +294,7 @@ async function showDayDetail(weekNumber, dayNumber) {
   const startDate = await getSetting('programStartDate');
   let dayLabel = workout.day;
   if (startDate) {
-    const date = new Date(startDate);
+    const date = parseLocalDate(startDate);
     date.setDate(date.getDate() + (weekNumber - 1) * 7 + (dayNumber - 1));
     dayLabel = date.toLocaleDateString('en-US', { weekday: 'long' });
   }

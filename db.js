@@ -227,15 +227,21 @@ async function clearAllData() {
   });
 }
 
+// Parse a YYYY-MM-DD string as local time (not UTC)
+function parseLocalDate(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 // Calculate current week and day based on start date
 function getCurrentWeekDay(startDateStr) {
   if (!startDateStr) return null;
 
-  const startDate = new Date(startDateStr);
+  const startDate = parseLocalDate(startDateStr);
 
   // Check for debug date override
   const debugDate = localStorage.getItem('debugDate');
-  const today = debugDate ? new Date(debugDate) : new Date();
+  const today = debugDate ? parseLocalDate(debugDate) : new Date();
 
   // Reset time to midnight for accurate day calculation
   startDate.setHours(0, 0, 0, 0);
@@ -273,7 +279,7 @@ function getTodayString() {
 
 // Format date for display
 function formatDate(dateStr) {
-  const date = new Date(dateStr);
+  const date = parseLocalDate(dateStr);
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
