@@ -150,14 +150,13 @@ async function renderTodayTab(container) {
   }
 
   const workout = getWorkout(current.weekNumber, current.dayNumber);
-  const dayNames = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   let html = `
     <div class="card">
       <div class="card-header">
         <div>
           <div class="card-title">Week ${current.weekNumber} &middot; Day ${current.dayNumber}</div>
-          <div class="card-subtitle">${dayNames[current.dayNumber]} &middot; ${formatDate(today)}</div>
+          <div class="card-subtitle">${formatDate(today)}</div>
         </div>
       </div>
   `;
@@ -253,16 +252,19 @@ async function renderPlanTab(container) {
     // Calculate actual date for this day
     let dayDate = null;
     let isLogged = false;
+    let actualDayName = day.day.substring(0, 3); // fallback to plan day name
     if (startDate) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + (selectedWeek - 1) * 7 + (day.dayNumber - 1));
       dayDate = date.toISOString().split('T')[0];
       isLogged = loggedDates.has(dayDate);
+      // Get the actual day of week from the calculated date
+      actualDayName = date.toLocaleDateString('en-US', { weekday: 'short' });
     }
 
     html += `
       <li class="day-item ${isToday ? 'today' : ''}" onclick="showDayDetail(${selectedWeek}, ${day.dayNumber})">
-        <span class="day-name">${day.day.substring(0, 3)}</span>
+        <span class="day-name">${actualDayName}</span>
         <span class="day-workout">${day.title}</span>
         <span class="day-status ${isLogged ? 'completed' : ''} ${isToday && !isLogged ? 'today' : ''}">
           ${isLogged ? '&#10003;' : (isToday ? '&#9679;' : '')}
@@ -281,13 +283,22 @@ function changeWeek(delta) {
   renderPlanTab(document.getElementById('content'));
 }
 
-function showDayDetail(weekNumber, dayNumber) {
+async function showDayDetail(weekNumber, dayNumber) {
   const workout = getWorkout(weekNumber, dayNumber);
   if (!workout) return;
 
   const modal = document.getElementById('log-modal');
   const modalBody = document.getElementById('modal-body');
-  document.querySelector('.modal-header h2').textContent = `Week ${weekNumber} - ${workout.day}`;
+
+  // Calculate actual day name from start date
+  const startDate = await getSetting('programStartDate');
+  let dayLabel = workout.day;
+  if (startDate) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + (weekNumber - 1) * 7 + (dayNumber - 1));
+    dayLabel = date.toLocaleDateString('en-US', { weekday: 'long' });
+  }
+  document.querySelector('.modal-header h2').textContent = `Week ${weekNumber} - ${dayLabel}`;
 
   let html = `
     <span class="workout-type ${workout.type}">${workout.type}</span>
