@@ -13,6 +13,7 @@ let editingLogId = null;
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 let selectedCalendarDate = null;
+let selectedExerciseIds = new Set();
 
 // Check if already unlocked
 function isUnlocked() {
@@ -543,6 +544,96 @@ async function renderSettingsTab(container) {
 
   html += `
     <div class="card mt-16">
+      <div class="card-title mb-16">Training Resources</div>
+      <div class="info-accordion">
+        <div class="info-item" onclick="toggleInfo('nutrition')">
+          <span>Nutrition Guidelines</span>
+          <span class="info-arrow" id="nutrition-arrow">&#8250;</span>
+        </div>
+        <div class="info-content hidden" id="nutrition-content">
+          <h4>Daily Nutrition</h4>
+          <ul>
+            <li><strong>Protein:</strong> ${nutritionGuidelines.daily.protein}</li>
+            <li><strong>Carbs:</strong> ${nutritionGuidelines.daily.carbohydrates}</li>
+            <li><strong>Hydration:</strong> ${nutritionGuidelines.daily.hydration}</li>
+            <li><strong>Focus:</strong> ${nutritionGuidelines.daily.focus}</li>
+          </ul>
+          <h4>Race Week</h4>
+          <ul>
+            <li>${nutritionGuidelines.raceWeek.carbLoading}</li>
+            <li>${nutritionGuidelines.raceWeek.fiber}</li>
+            <li>${nutritionGuidelines.raceWeek.familiar}</li>
+            <li>${nutritionGuidelines.raceWeek.hydration}</li>
+          </ul>
+          <h4>Race Day</h4>
+          <ul>
+            <li><strong>Pre-Race:</strong> ${nutritionGuidelines.raceDay.preRace}</li>
+            <li><strong>During:</strong> ${nutritionGuidelines.raceDay.during}</li>
+            <li><strong>Hydration:</strong> ${nutritionGuidelines.raceDay.hydration}</li>
+            <li><strong>Options:</strong> ${nutritionGuidelines.raceDay.options}</li>
+          </ul>
+        </div>
+
+        <div class="info-item" onclick="toggleInfo('mental')">
+          <span>Mental Preparation</span>
+          <span class="info-arrow" id="mental-arrow">&#8250;</span>
+        </div>
+        <div class="info-content hidden" id="mental-content">
+          <h4>Visualization Practice</h4>
+          <p>${mentalPreparation.visualization.frequency}</p>
+          <ul>
+            ${mentalPreparation.visualization.focus.map(f => '<li>' + f + '</li>').join('')}
+          </ul>
+          <h4>Race Day Mantras</h4>
+          <ul>
+            ${mentalPreparation.mantras.map(m => '<li>"' + m + '"</li>').join('')}
+          </ul>
+          <h4>If You Fail an Obstacle</h4>
+          <ol>
+            ${mentalPreparation.obstacleFailure.steps.map(s => '<li>' + s + '</li>').join('')}
+          </ol>
+        </div>
+
+        <div class="info-item" onclick="toggleInfo('checklist')">
+          <span>Race Day Checklist</span>
+          <span class="info-arrow" id="checklist-arrow">&#8250;</span>
+        </div>
+        <div class="info-content hidden" id="checklist-content">
+          <h4>Gear (pack night before)</h4>
+          <ul class="checklist">
+            ${raceDayChecklist.gear.map(g => '<li>' + g + '</li>').join('')}
+          </ul>
+          <h4>Race Morning</h4>
+          <ul class="checklist">
+            ${raceDayChecklist.raceMorning.map(r => '<li>' + r + '</li>').join('')}
+          </ul>
+        </div>
+
+        <div class="info-item" onclick="toggleInfo('zones')">
+          <span>Intensity Zones</span>
+          <span class="info-arrow" id="zones-arrow">&#8250;</span>
+        </div>
+        <div class="info-content hidden" id="zones-content">
+          ${Object.entries(intensityZones).map(([key, zone]) =>
+            '<div class="zone-item"><strong>' + zone.name + ':</strong> ' + zone.description + '</div>'
+          ).join('')}
+        </div>
+
+        <div class="info-item" onclick="toggleInfo('scaling')">
+          <span>Scaling Guidelines</span>
+          <span class="info-arrow" id="scaling-arrow">&#8250;</span>
+        </div>
+        <div class="info-content hidden" id="scaling-content">
+          <div class="zone-item"><strong>Beginner:</strong> ${scalingGuidelines.beginner}</div>
+          <div class="zone-item"><strong>Intermediate:</strong> ${scalingGuidelines.intermediate}</div>
+          <div class="zone-item"><strong>Advanced:</strong> ${scalingGuidelines.advanced}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += `
+    <div class="card mt-16">
       <p class="text-small text-muted text-center">
         Spartan Training Tracker v1.0<br>
         Based on the Official 12-Week Spartan Beast Training Plan
@@ -770,49 +861,141 @@ function showTodayExercises(weekNumber, dayNumber) {
   const workout = getWorkout(weekNumber, dayNumber);
   if (!workout) return;
 
+  selectedExerciseIds.clear();
   const pickerArea = document.getElementById('exercise-picker-area');
   let html = `
     <div class="card">
-      <div class="card-title mb-16">Today's Exercises</div>
-      <div class="exercise-picker">
+      <div class="card-header">
+        <div class="card-title">Today's Exercises</div>
+        <button class="btn btn-small btn-primary" id="add-selected-btn" onclick="addSelectedExercises()" disabled>
+          Add Selected (0)
+        </button>
+      </div>
+      <div class="exercise-picker multi-select">
   `;
 
   workout.exercises.forEach(ex => {
     let details = [];
-    if (ex.defaultSets) details.push(`${ex.defaultSets} sets`);
-    if (ex.defaultReps) details.push(`${ex.defaultReps} reps`);
-    if (ex.defaultTime) details.push(`${ex.defaultTime} min`);
-    if (ex.defaultDistance) details.push(`${ex.defaultDistance} ${ex.defaultUnit || 'mi'}`);
+    if (ex.defaultSets) details.push(ex.defaultSets + ' sets');
+    if (ex.defaultReps) details.push(ex.defaultReps + ' reps');
+    if (ex.defaultTime) details.push(ex.defaultTime + ' min');
+    if (ex.defaultDistance) details.push(ex.defaultDistance + ' ' + (ex.defaultUnit || 'mi'));
 
     html += `
-      <div class="picker-item" onclick="addExerciseToLog('${ex.id}')">
-        <div class="picker-item-name">${ex.name}</div>
-        ${details.length ? `<div class="picker-item-source">${details.join(' &middot; ')}</div>` : ''}
+      <div class="picker-item" data-exercise-id="${ex.id}" onclick="toggleExerciseSelection(this, '${ex.id}')">
+        <div class="picker-checkbox"></div>
+        <div class="picker-item-info">
+          <div class="picker-item-name">${ex.name}</div>
+          ${details.length ? '<div class="picker-item-source">' + details.join(' &middot; ') + '</div>' : ''}
+        </div>
       </div>
     `;
   });
 
-  html += `</div></div>`;
+  html += `
+      </div>
+      <div class="select-all-row">
+        <button class="btn btn-secondary btn-small" onclick="selectAllExercises()">Select All</button>
+        <button class="btn btn-secondary btn-small" onclick="clearExerciseSelection()">Clear</button>
+      </div>
+    </div>
+  `;
+
   pickerArea.innerHTML = html;
 }
 
+function toggleExerciseSelection(element, exerciseId) {
+  element.classList.toggle('selected');
+
+  if (selectedExerciseIds.has(exerciseId)) {
+    selectedExerciseIds.delete(exerciseId);
+  } else {
+    selectedExerciseIds.add(exerciseId);
+  }
+
+  updateAddSelectedButton();
+}
+
+function selectAllExercises() {
+  const items = document.querySelectorAll('.exercise-picker.multi-select .picker-item');
+  items.forEach(item => {
+    item.classList.add('selected');
+    selectedExerciseIds.add(item.dataset.exerciseId);
+  });
+  updateAddSelectedButton();
+}
+
+function clearExerciseSelection() {
+  const items = document.querySelectorAll('.exercise-picker.multi-select .picker-item');
+  items.forEach(item => item.classList.remove('selected'));
+  selectedExerciseIds.clear();
+  updateAddSelectedButton();
+}
+
+function updateAddSelectedButton() {
+  const btn = document.getElementById('add-selected-btn');
+  if (btn) {
+    const count = selectedExerciseIds.size;
+    btn.textContent = 'Add Selected (' + count + ')';
+    btn.disabled = count === 0;
+  }
+}
+
+function addSelectedExercises() {
+  const allExercises = getAllExercises();
+
+  selectedExerciseIds.forEach(exerciseId => {
+    const planExercise = allExercises.find(e => e.id === exerciseId);
+    if (planExercise) {
+      const exercise = {
+        name: planExercise.name,
+        type: planExercise.type,
+        source: 'Week ' + planExercise.weekNumber + ' ' + planExercise.dayTitle
+      };
+
+      if (planExercise.defaultSets) exercise.sets = planExercise.defaultSets;
+      if (planExercise.defaultReps) exercise.reps = planExercise.defaultReps;
+      if (planExercise.defaultTime) exercise.time = planExercise.defaultTime;
+      if (planExercise.defaultDistance) {
+        exercise.distance = planExercise.defaultDistance;
+        exercise.distanceUnit = planExercise.defaultUnit || 'mi';
+      }
+
+      currentLogExercises.push(exercise);
+    }
+  });
+
+  selectedExerciseIds.clear();
+  renderLogModal();
+}
+
 function showPlanBrowser() {
+  selectedExerciseIds.clear();
   const pickerArea = document.getElementById('exercise-picker-area');
   let html = `
     <div class="card">
-      <div class="card-title mb-16">Browse Plan</div>
+      <div class="card-header">
+        <div class="card-title">Browse Plan</div>
+        <button class="btn btn-small btn-primary" id="add-selected-btn" onclick="addSelectedExercises()" disabled>
+          Add Selected (0)
+        </button>
+      </div>
       <div class="form-group">
         <select class="form-input" id="plan-week-select" onchange="loadWeekExercises()">
   `;
 
   for (let w = 1; w <= 12; w++) {
-    html += `<option value="${w}">Week ${w}</option>`;
+    html += '<option value="' + w + '">Week ' + w + '</option>';
   }
 
   html += `
         </select>
       </div>
-      <div id="week-exercises-list" class="exercise-picker"></div>
+      <div id="week-exercises-list" class="exercise-picker multi-select"></div>
+      <div class="select-all-row">
+        <button class="btn btn-secondary btn-small" onclick="selectAllExercises()">Select All</button>
+        <button class="btn btn-secondary btn-small" onclick="clearExerciseSelection()">Clear</button>
+      </div>
     </div>
   `;
 
@@ -825,19 +1008,26 @@ function loadWeekExercises() {
   const week = trainingPlan.weeks.find(w => w.weekNumber === weekNum);
   const container = document.getElementById('week-exercises-list');
 
+  // Clear selections when changing weeks
+  selectedExerciseIds.clear();
+  updateAddSelectedButton();
+
   let html = '';
   week.days.forEach(day => {
     day.exercises.forEach(ex => {
       let details = [];
-      if (ex.defaultSets) details.push(`${ex.defaultSets} sets`);
-      if (ex.defaultReps) details.push(`${ex.defaultReps} reps`);
-      if (ex.defaultTime) details.push(`${ex.defaultTime} min`);
-      if (ex.defaultDistance) details.push(`${ex.defaultDistance} ${ex.defaultUnit || 'mi'}`);
+      if (ex.defaultSets) details.push(ex.defaultSets + ' sets');
+      if (ex.defaultReps) details.push(ex.defaultReps + ' reps');
+      if (ex.defaultTime) details.push(ex.defaultTime + ' min');
+      if (ex.defaultDistance) details.push(ex.defaultDistance + ' ' + (ex.defaultUnit || 'mi'));
 
       html += `
-        <div class="picker-item" onclick="addExerciseToLog('${ex.id}')">
-          <div class="picker-item-name">${ex.name}</div>
-          <div class="picker-item-source">${day.day} &middot; ${details.join(' &middot; ')}</div>
+        <div class="picker-item" data-exercise-id="${ex.id}" onclick="toggleExerciseSelection(this, '${ex.id}')">
+          <div class="picker-checkbox"></div>
+          <div class="picker-item-info">
+            <div class="picker-item-name">${ex.name}</div>
+            <div class="picker-item-source">${day.day} &middot; ${details.join(' &middot; ')}</div>
+          </div>
         </div>
       `;
     });
@@ -1066,4 +1256,11 @@ function closeModal() {
   currentLogExercises = [];
   currentLogNotes = '';
   editingLogId = null;
+}
+
+function toggleInfo(section) {
+  const content = document.getElementById(section + '-content');
+  const arrow = document.getElementById(section + '-arrow');
+  content.classList.toggle('hidden');
+  arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(90deg)';
 }
